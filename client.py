@@ -1,6 +1,7 @@
 import socket
 import sys
 import threading
+import os
 
 SERVER_HOST_NAME = ""
 SERVER_PORT_NUMBER = 0
@@ -92,13 +93,16 @@ def handle_received_message(connection):
     message = connection.recv(MESSAGE_LENGTH).decode("utf-8")
     print(message)
     print("-------")
-    print("> ")
+    print(">", end=" ")
+    sys.stdout.flush()
 
 
 def show_guidance():
     print("Guidance:")
-    print("join GROUP_ID  -> joins to group with GROUP_ID in server, if there isn't creates one")
-    print("send GROUP_ID MESSAGE -> sends MESSAGE to everyone joined in group with GROUP_ID")
+    print("join GROUP_ID  -> Join to group with GROUP_ID in server, if there isn't creates one")
+    print("send GROUP_ID MESSAGE -> Send MESSAGE to everyone joined in group with GROUP_ID")
+    print("leave GROUP_ID -> Leave from a group with GROUP_ID")
+    print("quit -> Quit from chatroom")
     print("----------------------------------------------------------------------------------")
 
 
@@ -108,8 +112,7 @@ def send_join_request(given_command):
         group_id = given_command.split(" ")[1]
         send_tcp_message(client, "join {} {}".format(group_id, CLIENT_NAME))
         response = client.recv(MESSAGE_LENGTH).decode("utf-8")
-        if response == "JOINED":
-            print("[SERVER MESSAGE] Joined successfully")
+        print(response)
         client.close()
 
 
@@ -122,11 +125,22 @@ def send_message_request(given_command):
             user_message += word + " "
         send_tcp_message(client, "MESSAGE: {} {} {}".format(CLIENT_NAME, group_id, user_message))
         response = client.recv(MESSAGE_LENGTH).decode("utf-8")
-        if response == "NOT ALLOWED":
-            print("[SERVER MESSAGE] You're not joined in this group. please join first")
-        if response == "SENT":
-            print("[SERVER MESSAGE] Message sent successfully")
+        print(response)
         client.close()
+
+
+def send_leave_request(given_command):
+    if len(given_command.split(" ")) == 2:
+        client = make_connection(SERVER_HOST_NAME, SERVER_PORT_NUMBER)
+        group_id = given_command.split(" ")[1]
+        send_tcp_message(client, "LEAVE: {} {}".format(group_id, CLIENT_NAME))
+        response = client.recv(MESSAGE_LENGTH).decode("utf-8")
+        print(response)
+
+
+def send_quit_request():
+    client = make_connection(SERVER_HOST_NAME, SERVER_PORT_NUMBER)
+    send_tcp_message(client, "QUIT: {}".format(CLIENT_NAME))
 
 
 if __name__ == "__main__":
@@ -143,3 +157,8 @@ if __name__ == "__main__":
             send_join_request(command)
         if command.startswith("send"):
             send_message_request(command)
+        if command.startswith('leave'):
+            send_leave_request(command)
+        if command == 'quit':
+            send_quit_request()
+            os._exit(0)

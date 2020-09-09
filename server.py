@@ -52,13 +52,13 @@ def handle_request(connection):
         user = message.split(" ")[2]
         if group_id in group_dict:
             if group_dict[group_id].__contains__(user):
-                connection.send("ALREADY THERE".encode("utf-8"))
+                connection.send("[SERVER MESSAGE] You're already in there".encode("utf-8"))
             else:
                 group_dict[group_id].append(user)
-                connection.send("JOINED".encode("utf-8"))
+                connection.send("[SERVER MESSAGE] Joined successfully".encode("utf-8"))
         else:
             group_dict[group_id] = [user]
-            connection.send("JOINED".encode("utf-8"))
+            connection.send("[SERVER MESSAGE] Joined successfully".encode("utf-8"))
 
     if message.startswith("MESSAGE:"):
         client_name = message.split(" ")[1]
@@ -69,9 +69,26 @@ def handle_request(connection):
                 client_message += word + " "
             client_message = client_message.strip()  # removing space at the end of it
             send_message_to_group("{}: {}".format(client_name, client_message), group_id, client_name)
-            connection.send("SENT".encode("utf-8"))
+            connection.send("[SERVER MESSAGE] Message sent successfully".encode("utf-8"))
         else:
-            connection.send("NOT ALLOWED".encode("utf-8"))
+            connection.send("[SERVER MESSAGE] You're not joined in this group. please join first".encode("utf-8"))
+    if message.startswith("LEAVE:"):
+        group_id = message.split(" ")[1]
+        user = message.split(" ")[2]
+        if group_id in group_dict:
+            if group_dict[group_id].__contains__(user):
+                group_dict[group_id].remove(user)
+                connection.send("[SERVER MESSAGE] left successfully".encode("utf-8"))
+            else:
+                connection.send("[SERVER MESSAGE] You're not in this group".encode("utf-8"))
+        else:
+            connection.send("[SERVER MESSAGE] This group doesn't exist".encode("utf-8"))
+    if message.startswith("QUIT:"):
+        client_name = message.split(" ")[1]
+        del current_users_dict[client_name]
+        for group in group_dict:
+            if group_dict[group].__contains__(client_name):
+                group_dict[group].remove(client_name)
 
 
 def send_message_to_group(message_to_send, group_id, sender):
