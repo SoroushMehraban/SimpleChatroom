@@ -60,6 +60,47 @@ def handle_request(connection):
             group_dict[group_id] = [user]
             connection.send("JOINED".encode("utf-8"))
 
+    if message.startswith("MESSAGE:"):
+        client_name = message.split(" ")[1]
+        group_id = message.split(" ")[2]
+        if group_id in group_dict and group_dict[group_id].__contains__(client_name):
+            client_message = ""
+            for word in message.split(" ")[3:]:
+                client_message += word + " "
+            client_message = client_message.strip()  # removing space at the end of it
+            send_message_to_group("{}: {}".format(client_name, client_message), group_id, client_name)
+            connection.send("SENT".encode("utf-8"))
+        else:
+            connection.send("NOT ALLOWED".encode("utf-8"))
+
+
+def send_message_to_group(message_to_send, group_id, sender):
+    for user in group_dict[group_id]:
+        if user == sender:
+            continue
+        user_info = current_users_dict[user]
+        user_socket = make_connection(user_info)
+        send_tcp_message(user_socket, "\nMessage from group {}:\n".format(group_id))
+        send_tcp_message(user_socket, message_to_send)
+        user_socket.close()
+
+
+def make_connection(user_info):
+    user_ip = user_info.split(":")[0]
+    user_port = int(user_info.split(":")[1])
+    try:
+        user_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        user_socket.connect((user_ip, user_port))
+        return user_socket
+    except Exception:
+        print("Connection failed")
+        exit(1)
+
+
+def send_tcp_message(source_socket, msg):
+    message = msg.encode("utf-8")
+    source_socket.send(message)
+
 
 if __name__ == "__main__":
     start_tcp_server()
