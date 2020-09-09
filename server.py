@@ -15,6 +15,7 @@ except (ValueError, IndexError):
             print("Your input should be an integer")
 
 MESSAGE_LENGTH = 1024 * 1024 * 2  # 2MB is maximum length
+current_users_dict = {}
 
 
 def start_tcp_server():
@@ -34,6 +35,16 @@ def start_tcp_server():
 def handle_request(connection):
     message = connection.recv(MESSAGE_LENGTH).decode("utf-8")
     print("Message Received: {}".format(message))
+    if message.startswith("checkuser:"):
+        user = message.split("checkuser:")[1].split(" ")[0]
+        user_host_info = message.split(" ")[1]
+
+        if user in current_users_dict:
+            connection.send("CHANGE NAME".encode("utf-8"))
+        else:
+            current_users_dict[user] = user_host_info
+            connection.send("OK NAME".encode("utf-8"))
+            print(current_users_dict)
 
 
 if __name__ == "__main__":
