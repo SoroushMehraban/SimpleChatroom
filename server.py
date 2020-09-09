@@ -16,6 +16,7 @@ except (ValueError, IndexError):
 
 MESSAGE_LENGTH = 1024 * 1024 * 2  # 2MB is maximum length
 current_users_dict = {}
+group_dict = {}
 
 
 def start_tcp_server():
@@ -45,6 +46,19 @@ def handle_request(connection):
             current_users_dict[user] = user_host_info
             connection.send("OK NAME".encode("utf-8"))
             print(current_users_dict)
+
+    if message.startswith("join"):
+        group_id = message.split(" ")[1]
+        user = message.split(" ")[2]
+        if group_id in group_dict:
+            if group_dict[group_id].__contains__(user):
+                connection.send("ALREADY THERE".encode("utf-8"))
+            else:
+                group_dict[group_id].append(user)
+                connection.send("JOINED".encode("utf-8"))
+        else:
+            group_dict[group_id] = [user]
+            connection.send("JOINED".encode("utf-8"))
 
 
 if __name__ == "__main__":

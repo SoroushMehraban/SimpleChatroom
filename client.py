@@ -98,11 +98,30 @@ def handle_received_message(connection):
     print("Message Received: {}".format(message))
 
 
+def show_guidance():
+    print("Guidance:")
+    print("join GROUP_ID  -> joins to group with GROUP_ID in server, if there isn't creates one")
+
+
+def send_join_request(given_command):
+    if len(given_command.split(" ")) == 2:
+        client = make_connection(SERVER_HOST_NAME, SERVER_PORT_NUMBER)
+        group_id = given_command.split(" ")[1]
+        send_tcp_message(client, "join {} {}".format(group_id, CLIENT_NAME))
+        response = client.recv(MESSAGE_LENGTH).decode("utf-8")
+        if response == "JOINED":
+            print("Joined successfully")
+
+
 if __name__ == "__main__":
     threading.Thread(target=start_tcp_server).start()
     get_server_host_name()
     get_server_port_number()
     get_client_name()
 
-    send_message_to_server("Hello from client")
-    send_message_to_server("Another message from client")
+    show_guidance()
+
+    while True:
+        command = input("> ")
+        if command.startswith("join"):
+            send_join_request(command)
